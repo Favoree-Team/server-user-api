@@ -1,0 +1,7 @@
+# ignore all following files
+.env
+/node_modules
+/public
+/storage
+
+/migration/*.sql
