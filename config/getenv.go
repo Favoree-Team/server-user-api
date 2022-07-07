@@ -38,3 +38,10 @@ func GetExpiredTime() (int, error) {
 
 	return expTime, nil
 }
+
+func GetEmailCredential() (email string, password string) {
+	email = os.Getenv("EMAIL_USER")
+	password = os.Getenv("EMAIL_PASSWORD")
+
+	return
+}

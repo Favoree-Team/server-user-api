@@ -73,12 +73,32 @@ type RequestTransaction struct {
 	AmountTransfer int    `json:"amount_transfer" binding:"required"`
 }
 
+type TransactionItemPage struct {
+	ExternalID     int               `json:"external_id"`
+	ID             string            `json:"id"`
+	UserID         string            `json:"user_id"`
+	SenderNumber   string            `json:"sender_number"`
+	SenderWallet   string            `json:"sender_wallet"`
+	ReceiverName   string            `json:"receiver_name"`
+	ReceiverNumber string            `json:"receiver_number"`
+	ReceiverWallet string            `json:"receiver_wallet"`
+	AmountTransfer int               `json:"amount_transfer"`
+	AdminFee       int               `json:"admin_fee"`
+	AmountReceived int               `json:"amount_received"`
+	Status         TransactionStatus `json:"status"` // [pending, paid, success, failed, canceled]
+	Done           bool              `json:"done"`   // default is false
+	IsConfirmPaid  ConfirmPaidStatus `json:"is_confirm_paid"`
+	CreatedAt      string            `json:"created_at"`
+	UpdatedAt      string            `json:"updated_at"`
+	ExpiredAt      string            `json:"expired_at"`
+}
+
 // for pagination
 type TransactionPage struct {
-	Total       int           `json:"total"`
-	TotalPage   int           `json:"total_page"`
-	CurrentPage int           `json:"current_page"`
-	Data        []Transaction `json:"data"`
+	Total       int                   `json:"total"`
+	TotalPage   int                   `json:"total_page"`
+	CurrentPage int                   `json:"current_page"`
+	Data        []TransactionItemPage `json:"data"`
 }
 
 // edit status by admin

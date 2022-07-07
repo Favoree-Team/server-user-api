@@ -5,3 +5,9 @@
 /storage
 
 /migration/*.sql
+
+secret.json
+credential.json
+
+.DS_Store
+.DS_store
