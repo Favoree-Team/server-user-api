@@ -19,7 +19,7 @@ type TransactionService interface {
 	UpdateStatusById(id string, input entity.TransactionStatusInput) error
 
 	// user
-	GetTransactionDetail(id string) (entity.Transaction, error)
+	// GetTransactionDetail(id string) (entity.Transaction, error)
 	CreateTransaction(userId string, input entity.RequestTransaction) (entity.Transaction, error)
 	GetLastTransaction(userId string) (entity.LastTransactionResponse, error)
 	ConfirmPaid(userId string, id string) error
@@ -52,14 +52,26 @@ func (s *transactionService) GetAllTransaction(page string, limit string) (entit
 		return entity.TransactionPage{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
 
-	var transctionPage = entity.TransactionPage{
-		Total:       total,
-		TotalPage:   total / int64(limitInt),
-		CurrentPage: int64(pageInt),
-		Data:        transactions.ToListTransactionItemPage(),
+	var transactionPage entity.TransactionPage
+
+	if total == 0 {
+		transactionPage.TotalPage = 1
+		transactionPage.Total = 0
+		transactionPage.CurrentPage = int64(pageInt)
+		transactionPage.Data = []entity.TransactionItemPage{}
+	} else {
+		if res := total % int64(limitInt); res == 0 {
+			transactionPage.TotalPage = total / int64(limitInt)
+		} else {
+			transactionPage.TotalPage = total/int64(limitInt) + 1
+		}
+
+		transactionPage.Total = total
+		transactionPage.CurrentPage = int64(pageInt)
+		transactionPage.Data = transactions.ToListTransactionItemPage((pageInt - 1) * limitInt)
 	}
 
-	return transctionPage, nil
+	return transactionPage, nil
 }
 
 func (s *transactionService) UpdateStatusById(id string, input entity.TransactionStatusInput) error {
@@ -84,9 +96,9 @@ func (s *transactionService) UpdateStatusById(id string, input entity.Transactio
 	return nil
 }
 
-func (s *transactionService) GetTransactionDetail(id string) (entity.Transaction, error) {
-	return entity.Transaction{}, nil
-}
+// func (s *transactionService) GetTransactionDetail(id string) (entity.Transaction, error) {
+// 	return entity.Transaction{}, nil
+// }
 
 func (s *transactionService) CreateTransaction(userId string, input entity.RequestTransaction) (entity.Transaction, error) {
 	// check last transaction, if user hijack to server
@@ -123,7 +135,8 @@ func (s *transactionService) CreateTransaction(userId string, input entity.Reque
 		AmountReceived: input.AmountTransfer - 1000,
 		Status:         entity.StatusPending,
 		Done:           false,
-		IsConfirmPaid:  entity.NotConfirmPaid,
+		IsConfirmPaid:  false,
+		CreatedAt:      time.Now().String(),
 		ExpiredAt:      time.Now().Add(expired).String(),
 	}
 
@@ -151,15 +164,27 @@ func (s *transactionService) GetLastTransaction(userId string) (entity.LastTrans
 	} else {
 		lastTransaction.Transaction = transactions[0]
 
+		// jika belum expired
 		// jika belum done => error
 		// jika belum done tapi sudah confirm paid => bisa create lagi
 
+		if transactions[0].IsConfirmPaid {
+			lastTransaction.InternalCode = entity.CreatableInternalCode
+			return lastTransaction, nil
+		}
+
 		if !transactions[0].Done {
-			if !transactions[0].IsConfirmPaid {
-				lastTransaction.InternalCode = entity.ErrorInternalCode
-			} else {
-				lastTransaction.InternalCode = entity.CreatableInternalCode
+			timeExp, err := utils.ParseStrtoTime(transactions[0].ExpiredAt)
+			if err != nil {
+				return entity.LastTransactionResponse{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 			}
+
+			if timeExp.After(time.Now()) {
+				lastTransaction.InternalCode = entity.ErrorInternalCode
+				return lastTransaction, nil
+			}
+
+			lastTransaction.InternalCode = entity.CreatableInternalCode
 
 			return lastTransaction, nil
 		} else {
@@ -183,8 +208,8 @@ func (s *transactionService) ConfirmPaid(userId string, id string) error {
 		"updated_at": time.Now(),
 	}
 
-	if transaction.IsConfirmPaid == entity.NotConfirmPaid {
-		edit["is_confirm_paid"] = entity.ConfirmPaid
+	if !transaction.IsConfirmPaid {
+		edit["is_confirm_paid"] = true
 
 		err := s.transRepo.UpdateByID(id, edit)
 		if err != nil {

@@ -25,7 +25,11 @@ func (r *transactionRepository) GetAll(offset int, limit int) (entity.ListTransa
 	var transactions []entity.Transaction
 
 	if err := r.db.Limit(limit).Offset(offset).Order("created_at DESC").Find(&transactions).Error; err != nil {
-		return nil, 0, err
+		if err == gorm.ErrRecordNotFound {
+			return []entity.Transaction{}, 0, nil
+		} else {
+			return nil, 0, err
+		}
 	}
 
 	var count int64

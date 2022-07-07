@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	userRepository = repository.NewUserRepository(DB)
-	userService    = service.NewUserService(userRepository, authService, emailNotif)
-	userController = controller.NewUserController(userService)
+	userRepository     = repository.NewUserRepository(DB)
+	ipRecordRepository = repository.NewIPRecordRepository(DB)
+	userService        = service.NewUserService(userRepository, ipRecordRepository, authService, emailNotif)
+	userController     = controller.NewUserController(userService)
 )
 
 func UserRoute(r *gin.Engine) {
@@ -19,6 +20,11 @@ func UserRoute(r *gin.Engine) {
 	{
 		user := v1.Group("/users")
 		{
+
+			user.POST("/ip_address/check", userController.IPAddressCheck)
+
+			user.POST("/ip_address/create", mainMiddleware, userController.IPAddressCreate)
+
 			user.POST("/register", userController.RegisterUser)
 			user.POST("/login", userController.LoginUser)
 

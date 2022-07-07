@@ -8,8 +8,6 @@ type TransactionStatusEnum interface {
 
 type TransactionStatus string
 
-type ConfirmPaidStatus bool
-
 const (
 	StatusPending TransactionStatus = "pending"
 
@@ -27,10 +25,6 @@ const (
 	// canceled by user
 	// set Done to true
 	StatusCanceled TransactionStatus = "canceled"
-
-	// confirmation paid status
-	NotConfirmPaid ConfirmPaidStatus = false
-	ConfirmPaid    ConfirmPaidStatus = true
 )
 
 func (t TransactionStatus) IsValid() bool {
@@ -58,7 +52,7 @@ type Transaction struct {
 	AmountReceived int               `json:"amount_received"`
 	Status         TransactionStatus `json:"status"` // [pending, paid, success, failed, canceled]
 	Done           bool              `json:"done"`   // default is false
-	IsConfirmPaid  ConfirmPaidStatus `json:"is_confirm_paid"`
+	IsConfirmPaid  bool              `json:"is_confirm_paid"`
 	CreatedAt      string            `json:"created_at"`
 	UpdatedAt      string            `json:"updated_at"`
 	ExpiredAt      string            `json:"expired_at"`
@@ -66,12 +60,16 @@ type Transaction struct {
 
 type ListTransaction []Transaction
 
-func (t ListTransaction) ToListTransactionItemPage() []TransactionItemPage {
+func (t ListTransaction) ToListTransactionItemPage(start int) []TransactionItemPage {
 	var listTransaction []TransactionItemPage
+
+	if len(t) < 1 {
+		return []TransactionItemPage{}
+	}
 
 	for i := 0; i < len(t); i++ {
 		transactionItemPage := TransactionItemPage{
-			ExternalID:     i + 1,
+			ExternalID:     start + (i + 1),
 			ID:             t[i].ID,
 			UserID:         t[i].UserID,
 			SenderNumber:   t[i].SenderNumber,
@@ -119,7 +117,7 @@ type TransactionItemPage struct {
 	AmountReceived int               `json:"amount_received"`
 	Status         TransactionStatus `json:"status"` // [pending, paid, success, failed, canceled]
 	Done           bool              `json:"done"`   // default is false
-	IsConfirmPaid  ConfirmPaidStatus `json:"is_confirm_paid"`
+	IsConfirmPaid  bool              `json:"is_confirm_paid"`
 	CreatedAt      string            `json:"created_at"`
 	UpdatedAt      string            `json:"updated_at"`
 	ExpiredAt      string            `json:"expired_at"`

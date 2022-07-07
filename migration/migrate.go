@@ -25,10 +25,9 @@ func main() {
 	case "migrate_db":
 		// excute create table
 		ExecuteQueries(db, "./migration/table.sql")
-		ExecuteQueries(db, "./migration/seed.sql")
-	case "seed_test":
+	case "migrate_seed":
 		// excute seed test
-		ExecuteQueries(db, "./migration/seed_test.sql")
+		ExecuteQueries(db, "./migration/seed.sql")
 	case "drop_db":
 		// drop tables
 		ExecuteQueries(db, "./migration/drop.sql")

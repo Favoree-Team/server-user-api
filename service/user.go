@@ -23,17 +23,23 @@ type UserService interface {
 	// Verified()
 	// InactiveUser(id string) error
 	// ActivateUser(id string) error
+
+	// ip record
+	CheckIPRecord(input entity.IPRecordRequest) (entity.IPRecordResponse, error)
+	InsertIPRecord(input entity.IPRecordInput) error
 }
 
 type userService struct {
 	userRepository repository.UserRepository
+	ipRecordRepo   repository.IPRecordRepository
 	authService    auth.AuthService
 	emailNotif     notification.EmailNotification
 }
 
-func NewUserService(userRepository repository.UserRepository, authService auth.AuthService, emailNotif notification.EmailNotification) *userService {
+func NewUserService(userRepository repository.UserRepository, ipRecordRepo repository.IPRecordRepository, authService auth.AuthService, emailNotif notification.EmailNotification) *userService {
 	return &userService{
 		userRepository: userRepository,
+		ipRecordRepo:   ipRecordRepo,
 		authService:    authService,
 		emailNotif:     emailNotif,
 	}
@@ -203,4 +209,45 @@ func (s *userService) UserEditbyID(id string, input entity.UserProfileEdit) erro
 	}
 
 	return nil
+}
+
+func (s *userService) CheckIPRecord(input entity.IPRecordRequest) (entity.IPRecordResponse, error) {
+	ipRecord, err := s.ipRecordRepo.GetByIPAddress(input.IPAddress)
+	if err != nil {
+		return entity.IPRecordResponse{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
+	}
+
+	if ipRecord.ID == "" || ipRecord.IPAddress != input.IPAddress {
+		return entity.IPRecordResponse{
+			IPAddress: input.IPAddress,
+			Status:    entity.RejectedStatus,
+			Message:   "IP address not found",
+		}, nil
+	}
+
+	if ipRecord.IPAddress == input.IPAddress {
+		if ipRecord.Role == "admin" {
+			return entity.IPRecordResponse{
+				IPAddress: input.IPAddress,
+				Status:    entity.AccessibleStatus,
+				Message:   "IP address already accepted",
+			}, nil
+		}
+	}
+
+	return entity.IPRecordResponse{
+		IPAddress: input.IPAddress,
+		Status:    entity.RejectedStatus,
+		Message:   "IP address rejected",
+	}, nil
+}
+
+func (s *userService) InsertIPRecord(input entity.IPRecordInput) error {
+	var ipRecord = entity.IPRecord{
+		ID:        utils.NewUUID(),
+		IPAddress: input.IPAddress,
+		Role:      input.Role,
+	}
+
+	return s.ipRecordRepo.Create(ipRecord)
 }

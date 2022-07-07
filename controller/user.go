@@ -20,6 +20,64 @@ func NewUserController(userService service.UserService) *userController {
 	}
 }
 
+func (uc *userController) IPAddressCheck(c *gin.Context) {
+	var input entity.IPRecordRequest
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorHandler(utils.CreateErrorMsg(http.StatusBadRequest, err)))
+		return
+	}
+
+	result, err := uc.userService.CheckIPRecord(input)
+	if err != nil {
+		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (uc *userController) IPAddressCreate(c *gin.Context) {
+
+	_, ok := c.Get("user_id")
+	if !ok {
+		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("unauthorized user"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
+		return
+	}
+
+	role, ok := c.Get("role")
+	if !ok {
+		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("unauthorized user"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
+		return
+	}
+
+	if role.(string) != "admin" {
+		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("only admin can access"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
+		return
+	}
+
+	var input entity.IPRecordInput
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorHandler(utils.CreateErrorMsg(http.StatusBadRequest, err)))
+		return
+	}
+
+	err := uc.userService.InsertIPRecord(input)
+	if err != nil {
+		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ip_address": input.IPAddress,
+		"message":    "create ip record success",
+	})
+}
+
 func (uc *userController) VerifyEmailUser(c *gin.Context) {
 
 }
