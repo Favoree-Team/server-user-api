@@ -14,7 +14,7 @@ const (
 	StatusPending TransactionStatus = "pending"
 
 	// user success paid the transaction, after click the upload data in web, update to paid
-	StatusPaid TransactionStatus = "paid"
+	//StatusPaid TransactionStatus = "paid"
 
 	// success transfer manual from admin, change to success
 	// set Done to true
@@ -35,7 +35,7 @@ const (
 
 func (t TransactionStatus) IsValid() bool {
 	switch t {
-	case StatusPending, StatusPaid, StatusSuccess, StatusFailed, StatusCanceled:
+	case StatusPending, StatusSuccess, StatusFailed, StatusCanceled:
 		return true
 	}
 	return false
@@ -62,6 +62,38 @@ type Transaction struct {
 	CreatedAt      string            `json:"created_at"`
 	UpdatedAt      string            `json:"updated_at"`
 	ExpiredAt      string            `json:"expired_at"`
+}
+
+type ListTransaction []Transaction
+
+func (t ListTransaction) ToListTransactionItemPage() []TransactionItemPage {
+	var listTransaction []TransactionItemPage
+
+	for i := 0; i < len(t); i++ {
+		transactionItemPage := TransactionItemPage{
+			ExternalID:     i + 1,
+			ID:             t[i].ID,
+			UserID:         t[i].UserID,
+			SenderNumber:   t[i].SenderNumber,
+			SenderWallet:   t[i].SenderWallet,
+			ReceiverName:   t[i].ReceiverName,
+			ReceiverNumber: t[i].ReceiverNumber,
+			ReceiverWallet: t[i].ReceiverWallet,
+			AmountTransfer: t[i].AmountTransfer,
+			AdminFee:       t[i].AdminFee,
+			AmountReceived: t[i].AmountReceived,
+			Status:         t[i].Status,
+			Done:           t[i].Done,
+			IsConfirmPaid:  t[i].IsConfirmPaid,
+			CreatedAt:      t[i].CreatedAt,
+			UpdatedAt:      t[i].UpdatedAt,
+			ExpiredAt:      t[i].ExpiredAt,
+		}
+
+		listTransaction = append(listTransaction, transactionItemPage)
+	}
+
+	return listTransaction
 }
 
 type RequestTransaction struct {
@@ -95,13 +127,28 @@ type TransactionItemPage struct {
 
 // for pagination
 type TransactionPage struct {
-	Total       int                   `json:"total"`
-	TotalPage   int                   `json:"total_page"`
-	CurrentPage int                   `json:"current_page"`
+	Total       int64                 `json:"total"`
+	TotalPage   int64                 `json:"total_page"`
+	CurrentPage int64                 `json:"current_page"`
 	Data        []TransactionItemPage `json:"data"`
 }
 
 // edit status by admin
 type TransactionStatusInput struct {
 	Status string `json:"status" binding:"required,status_enum"` // [pending, paid, success, failed, cancelled]
+}
+
+// entity last transaction
+
+type InternalCode string
+
+const (
+	ErrorInternalCode     InternalCode = "ERROR"
+	CreatableInternalCode InternalCode = "CREATABLE"
+)
+
+type LastTransactionResponse struct {
+	UserID       string       `json:"user_id"`
+	InternalCode InternalCode `json:"internal_code"`
+	Transaction  Transaction  `json:"transaction"`
 }

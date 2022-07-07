@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/Favoree-Team/server-user-api/entity"
@@ -19,8 +20,25 @@ func NewUserController(userService service.UserService) *userController {
 	}
 }
 
-func (uc *userController) RegisterUser(c *gin.Context) {
+func (uc *userController) VerifyEmailUser(c *gin.Context) {
 
+}
+
+func (uc *userController) RegisterUser(c *gin.Context) {
+	var userInput entity.UserRegisterInput
+
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorHandler(utils.CreateErrorMsg(http.StatusBadRequest, err)))
+		return
+	}
+
+	userRegister, err := uc.userService.RegisterUser(userInput)
+	if err != nil {
+		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
+		return
+	}
+
+	c.JSON(http.StatusCreated, userRegister)
 }
 
 func (uc *userController) LoginUser(c *gin.Context) {
@@ -40,91 +58,61 @@ func (uc *userController) LoginUser(c *gin.Context) {
 	c.JSON(http.StatusOK, userLogin)
 }
 
-// func (cs *userController) GetAllUser(c *gin.Context) {
-// 	datas, err := cs.userService.GetAllUser()
-// 	if err != nil {
-// 		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
-// 		return
-// 	}
+func (uc *userController) GetUser(c *gin.Context) {
+	userId, ok := c.Get("user_id")
+	if !ok {
+		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("unauthorized user"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
+		return
+	}
 
-// 	c.JSON(200, datas)
-// }
+	userDetail, err := uc.userService.GetUserID(userId.(string))
+	if err != nil {
+		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
+		return
+	}
 
-// func (cs *userController) GetUserById(c *gin.Context) {
-// 	param := c.Param("id")
+	c.JSON(http.StatusOK, userDetail)
+}
 
-// 	if param == "" {
-// 		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, errors.New("parameter not valid")))
-// 		return
-// 	}
+func (uc *userController) UserProfileEdit(c *gin.Context) {
+	userId, ok := c.Get("user_id")
+	if !ok {
+		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("unauthorized user"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
+		return
+	}
 
-// 	data, err := cs.userService.GetUserById(param)
-// 	if err != nil {
-// 		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
-// 		return
-// 	}
+	var userProfileEdit entity.UserProfileEdit
+	if err := c.ShouldBindJSON(&userProfileEdit); err != nil {
+		c.JSON(http.StatusBadRequest, utils.ErrorHandler(utils.CreateErrorMsg(http.StatusBadRequest, err)))
+		return
+	}
 
-// 	c.JSON(200, data)
-// }
+	err := uc.userService.UserEditbyID(userId.(string), userProfileEdit)
+	if err != nil {
+		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
+		return
+	}
 
-// func (cs *userController) CreateUser(c *gin.Context) {
-// 	var input entity.UserInput
+	c.JSON(http.StatusOK, nil)
+}
 
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, err))
-// 		return
-// 	}
+func (uc *userController) SubscribeBlog(c *gin.Context) {
+	userId, ok := c.Get("user_id")
+	if !ok {
+		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("unauthorized user"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
+		return
+	}
 
-// 	err := cs.userService.CreateUser(input)
-// 	if err != nil {
-// 		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
-// 		return
-// 	}
+	err := uc.userService.SubscribeBlog(userId.(string))
+	if err != nil {
+		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
+		return
+	}
 
-// 	c.JSON(201, gin.H{
-// 		"message": "success create user",
-// 	})
-// }
-
-// func (cs *userController) UpdateUserById(c *gin.Context) {
-// 	var input entity.UserInput
-
-// 	param := c.Param("id")
-// 	if param == "" {
-// 		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, errors.New("parameter not valid")))
-// 		return
-// 	}
-
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, err))
-// 		return
-// 	}
-
-// 	err := cs.userService.UpdateUserById(param, input)
-// 	if err != nil {
-// 		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
-// 		return
-// 	}
-
-// 	c.JSON(200, gin.H{
-// 		"message": "success update user id: " + param,
-// 	})
-// }
-
-// func (cs *userController) DeleteUserById(c *gin.Context) {
-// 	param := c.Param("id")
-// 	if param == "" {
-// 		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, errors.New("parameter not valid")))
-// 		return
-// 	}
-
-// 	err := cs.userService.DeleteUserById(param)
-// 	if err != nil {
-// 		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
-// 		return
-// 	}
-
-// 	c.JSON(200, gin.H{
-// 		"message": "success delete user id: " + param,
-// 	})
-// }
+	c.JSON(http.StatusOK, gin.H{
+		"message": "subscribe blog success",
+	})
+}

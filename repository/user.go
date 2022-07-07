@@ -8,6 +8,7 @@ import (
 type UserRepository interface {
 	GetUserByEmail(email string) (entity.User, error)
 	GetUserById(id string) (entity.User, error)
+	GetUserByUsername(username string) (entity.User, error)
 	Insert(user entity.User) error
 	UpdateById(id string, updates map[string]interface{}) error
 }
@@ -23,7 +24,11 @@ func NewUserRepository(db *gorm.DB) *userRepository {
 func (r *userRepository) GetUserByEmail(email string) (entity.User, error) {
 	var user entity.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
-		return entity.User{}, err
+		if err == gorm.ErrRecordNotFound {
+			return entity.User{}, nil
+		} else {
+			return entity.User{}, err
+		}
 	}
 	return user, nil
 }
@@ -31,7 +36,23 @@ func (r *userRepository) GetUserByEmail(email string) (entity.User, error) {
 func (r *userRepository) GetUserById(id string) (entity.User, error) {
 	var user entity.User
 	if err := r.db.Where("id = ?", id).First(&user).Error; err != nil {
-		return entity.User{}, err
+		if err == gorm.ErrRecordNotFound {
+			return entity.User{}, nil
+		} else {
+			return entity.User{}, err
+		}
+	}
+	return user, nil
+}
+
+func (r *userRepository) GetUserByUsername(username string) (entity.User, error) {
+	var user entity.User
+	if err := r.db.Where("username = ?", username).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return entity.User{}, nil
+		} else {
+			return entity.User{}, err
+		}
 	}
 	return user, nil
 }

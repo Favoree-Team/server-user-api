@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"time"
 
 	"github.com/Favoree-Team/server-user-api/config"
 	"github.com/dgrijalva/jwt-go"
@@ -52,4 +53,21 @@ func (s *authService) ValidateToken(encodedToken string) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+func (s *authService) GenerateTokenValidate(userId string) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id":    userId,
+		"expired_at": time.Now().Add(time.Hour * 24).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, err := token.SignedString([]byte(config.GetKeyJWT()))
+
+	if err != nil {
+		return signedToken, err
+	}
+
+	return signedToken, nil
 }

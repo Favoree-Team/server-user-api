@@ -19,20 +19,20 @@ func UserRoute(r *gin.Engine) {
 	{
 		user := v1.Group("/users")
 		{
-			user.POST("/register")
+			user.POST("/register", userController.RegisterUser)
 			user.POST("/login", userController.LoginUser)
 
 			// user detail, with middleware
-			user.GET("/:id")
+			user.GET("/detail", mainMiddleware, userController.GetUser)
 
 			// user edit, with middleware
-			user.PUT("/:id")
+			user.PUT("/edit", mainMiddleware, userController.UserProfileEdit)
 
 			// subscribe blog, automatic set to subscribe
-			user.POST("/:id/blog_subscribe")
+			user.POST("/blog_subscribe", mainMiddleware, userController.SubscribeBlog)
 
 			// verification, using jwt code
-			user.POST("/:id/verification/")
+			user.POST("/verification", mainMiddleware)
 			/*
 				body {
 					"verification_code": "sdlajdkajdklasdjklajdkladjl"
@@ -41,7 +41,7 @@ func UserRoute(r *gin.Engine) {
 				// get claim "code"
 			*/
 
-			user.POST("/:id/password_reset")
+			user.POST("/password_reset", mainMiddleware)
 			/*
 				body {
 					"new_password": "12345678"

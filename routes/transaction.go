@@ -22,10 +22,10 @@ func TransactionRoute(r *gin.Engine) {
 
 			// ================  ADMIN  =====================
 			// get transaction list, admin only
-			trx.GET("/:page/:limit")
+			trx.GET("/:page/:limit", mainMiddleware, transController.GetAllTransaction)
 
 			// update transaction status flow, admin only
-			trx.PUT("/:id")
+			trx.PUT("/:transaction_id", mainMiddleware, transController.UpdateTransactionByAdmin)
 			/*
 				body {
 					"status": "paid"
@@ -34,16 +34,20 @@ func TransactionRoute(r *gin.Engine) {
 
 			// ================  USER  =====================
 			// create new transaction
-			trx.POST("/")
+			trx.POST("/", mainMiddleware, transController.CreateTransaction)
 
-			// get transaction detail
-			trx.GET("/:id")
+			// get transaction detail (MASIH BELUM PERLU)
+			// bisa diget dari last transaction
+			//trx.GET("/:transaction_id", mainMiddleware)
+
+			// last transaction user
+			trx.GET("/last", mainMiddleware, transController.GetLastTransaction)
 
 			// user post after click confirm paid
-			trx.POST("/:id/confirm_paid")
+			trx.POST("/:transaction_id/confirm_paid", mainMiddleware, transController.ConfirmPaid)
 
 			// cancel by user, with middleware
-			trx.POST("/:id/cancel")
+			trx.POST("/:transaction_id/cancel", mainMiddleware, transController.CancelTransaction)
 		}
 	}
 }

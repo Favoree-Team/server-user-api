@@ -6,8 +6,9 @@ import (
 )
 
 type TransactionRepository interface {
-	GetAll(offset int, limit int) ([]entity.Transaction, error)
+	GetAll(offset int, limit int) (entity.ListTransaction, int64, error)
 	GetByID(id string) (entity.Transaction, error)
+	GetByUserID(userId string) (entity.ListTransaction, error)
 	Insert(transaction entity.Transaction) error
 	UpdateByID(id string, updates map[string]interface{}) error
 }
@@ -20,24 +21,47 @@ func NewTransactionRepository(db *gorm.DB) *transactionRepository {
 	return &transactionRepository{db: db}
 }
 
-func (r *transactionRepository) GetAll(offset int, limit int) ([]entity.Transaction, error) {
+func (r *transactionRepository) GetAll(offset int, limit int) (entity.ListTransaction, int64, error) {
 	var transactions []entity.Transaction
 
-	if err := r.db.Limit(limit).Offset(offset).Find(&transactions).Error; err != nil {
-		return nil, err
+	if err := r.db.Limit(limit).Offset(offset).Order("created_at DESC").Find(&transactions).Error; err != nil {
+		return nil, 0, err
 	}
 
-	return transactions, nil
+	var count int64
+	if err := r.db.Model(&entity.Transaction{}).Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return transactions, count, nil
 }
 
 func (r *transactionRepository) GetByID(id string) (entity.Transaction, error) {
 	var transaction entity.Transaction
 
 	if err := r.db.Where("id = ?", id).First(&transaction).Error; err != nil {
-		return transaction, err
+		if err == gorm.ErrRecordNotFound {
+			return entity.Transaction{}, nil
+		} else {
+			return entity.Transaction{}, err
+		}
 	}
 
 	return transaction, nil
+}
+
+func (r *transactionRepository) GetByUserID(userId string) (entity.ListTransaction, error) {
+	var transactions []entity.Transaction
+
+	if err := r.db.Where("user_id = ?", userId).Order("created_at DESC").Find(&transactions).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return []entity.Transaction{}, nil
+		} else {
+			return nil, err
+		}
+	}
+
+	return transactions, nil
 }
 
 func (r *transactionRepository) Insert(transaction entity.Transaction) error {

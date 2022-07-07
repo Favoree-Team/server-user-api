@@ -17,6 +17,9 @@ type UserService interface {
 	RegisterUser(input entity.UserRegisterInput) (entity.UserResponse, error)
 	LoginUser(input entity.UserLoginInput) (entity.UserResponse, error)
 	SubscribeBlog(id string) error
+
+	GetUserID(id string) (entity.UserDetailResponse, error)
+	UserEditbyID(id string, input entity.UserProfileEdit) error
 	// Verified()
 	// InactiveUser(id string) error
 	// ActivateUser(id string) error
@@ -41,15 +44,26 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 	// get user and check email in database
 	userResp := entity.UserResponse{}
 
-	user, err := s.userRepository.GetUserByEmail(input.Email)
+	checkEmail, err := s.userRepository.GetUserByEmail(input.Email)
 
 	if err != nil {
 		return userResp, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
 
 	// if found, return error information
-	if user.ID != "" && user.Email == input.Email {
+	if checkEmail.ID != "" && checkEmail.Email == input.Email {
 		return userResp, utils.CreateErrorMsg(http.StatusBadRequest, errors.New("email already exists"))
+	} else if checkEmail.Username == input.Username {
+		return userResp, utils.CreateErrorMsg(http.StatusBadRequest, errors.New("username already exists"))
+	}
+
+	checkUname, err := s.userRepository.GetUserByUsername(input.Username)
+	if err != nil {
+		return userResp, utils.CreateErrorMsg(http.StatusInternalServerError, err)
+	}
+
+	if checkUname.ID != "" && checkUname.Username == input.Username {
+		return userResp, utils.CreateErrorMsg(http.StatusBadRequest, errors.New("username already exists"))
 	}
 
 	// generate password to hash
@@ -59,7 +73,7 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 	}
 
 	// if not found, create new user
-	user = entity.User{
+	user := entity.User{
 		ID:              utils.NewUUID(),
 		Email:           input.Email,
 		Username:        input.Username,
@@ -82,7 +96,7 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 		return userResp, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
 
-	// send email verification to user email with goroutine
+	//TODO: send email verification to user email with goroutine
 
 	// return userResponse
 	userResp.ID = user.ID
@@ -148,6 +162,44 @@ func (s *userService) SubscribeBlog(id string) error {
 		if err != nil {
 			return utils.CreateErrorMsg(http.StatusInternalServerError, err)
 		}
+	}
+
+	return nil
+}
+
+func (s *userService) GetUserID(id string) (entity.UserDetailResponse, error) {
+	user, err := s.userRepository.GetUserById(id)
+	if err != nil {
+		return entity.UserDetailResponse{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
+	}
+
+	return user.ToUserDetailResponse(), nil
+}
+
+func (s *userService) UserEditbyID(id string, input entity.UserProfileEdit) error {
+	var edit = map[string]interface{}{}
+
+	edit["updated_at"] = time.Now()
+
+	if input.FullName != "" || len(input.FullName) > 0 {
+		edit["full_name"] = input.FullName
+	}
+
+	if input.PictureUrl != "" || len(input.PictureUrl) > 0 {
+		edit["picture_url"] = input.PictureUrl
+	}
+
+	if input.Username != "" || len(input.Username) > 0 {
+		edit["username"] = input.Username
+	}
+
+	if input.PhoneNumber != "" || len(input.PhoneNumber) > 0 {
+		edit["phone_number"] = input.PhoneNumber
+	}
+
+	err := s.userRepository.UpdateById(id, edit)
+	if err != nil {
+		return utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
 
 	return nil
