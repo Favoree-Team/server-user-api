@@ -28,7 +28,7 @@ func GetKeyJWT() string {
 }
 
 // expired in minute
-func GetExpiredTime() (int, error) {
+func GetExpiredTime() (int64, error) {
 	time := os.Getenv("EXPIRED_TIME")
 
 	expTime, err := strconv.Atoi(time)
@@ -36,7 +36,8 @@ func GetExpiredTime() (int, error) {
 		return 0, err
 	}
 
-	return expTime, nil
+	return int64(expTime), nil
+
 }
 
 func GetEmailCredential() (email string, password string) {

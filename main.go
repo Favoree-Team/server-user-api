@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/Favoree-Team/server-user-api/entity"
-	"github.com/Favoree-Team/server-user-api/notification"
+	"github.com/Favoree-Team/server-user-api/middleware"
+	"github.com/Favoree-Team/server-user-api/routes"
+	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 )
@@ -12,19 +14,12 @@ func main() {
 		v.RegisterValidation("status_enum", entity.ValidateTransStatusEnum)
 	}
 
-	// r := gin.Default()
+	r := gin.Default()
 
-	// r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.CORSMiddleware())
 
-	// routes.UserRoute(r)
-	// routes.TransactionRoute(r)
+	routes.UserRoute(r)
+	routes.TransactionRoute(r)
 
-	// r.Run()
-
-	var (
-		emailNotif = notification.NewEmailNotification()
-	)
-
-	emailNotif.SendVerification("afistapratama@gmail.com", "https://google.com")
-
+	r.Run()
 }

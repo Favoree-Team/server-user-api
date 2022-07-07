@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Favoree-Team/server-user-api/config"
 	"github.com/Favoree-Team/server-user-api/entity"
 	"github.com/Favoree-Team/server-user-api/repository"
 	"github.com/Favoree-Team/server-user-api/utils"
@@ -101,6 +102,14 @@ func (s *transactionService) CreateTransaction(userId string, input entity.Reque
 
 	generateId := utils.NewUUID()
 
+	// expired using env
+	expiredTime, err := config.GetExpiredTime()
+	if err != nil {
+		return entity.Transaction{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
+	}
+
+	expired := time.Minute * time.Duration(expiredTime)
+
 	var transaction = entity.Transaction{
 		ID:             generateId,
 		UserID:         userId,
@@ -115,7 +124,7 @@ func (s *transactionService) CreateTransaction(userId string, input entity.Reque
 		Status:         entity.StatusPending,
 		Done:           false,
 		IsConfirmPaid:  entity.NotConfirmPaid,
-		ExpiredAt:      time.Now().Add(time.Minute * 30).String(),
+		ExpiredAt:      time.Now().Add(expired).String(),
 	}
 
 	err = s.transRepo.Insert(transaction)
