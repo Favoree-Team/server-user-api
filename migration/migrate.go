@@ -26,7 +26,6 @@ func main() {
 		// excute create table
 		ExecuteQueries(db, "./migration/table.sql")
 		ExecuteQueries(db, "./migration/seed.sql")
-
 	case "seed_test":
 		// excute seed test
 		ExecuteQueries(db, "./migration/seed_test.sql")

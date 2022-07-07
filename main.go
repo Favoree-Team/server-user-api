@@ -18,6 +18,7 @@ func main() {
 
 	r.Use(middleware.CORSMiddleware())
 
+	routes.PingRoute(r)
 	routes.UserRoute(r)
 	routes.TransactionRoute(r)
 

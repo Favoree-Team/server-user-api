@@ -27,12 +27,11 @@ func FailOnError(err error) {
 func ConnectDB() *gorm.DB {
 	var cred = GetCredentialDB()
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", cred.Username, cred.Password, cred.Host, cred.Port, cred.DBName)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", cred.Username, cred.Password, cred.Host, cred.DBName)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		PrepareStmt: true,
 	})
 	FailOnError(err)
 
 	return db
-
 }
