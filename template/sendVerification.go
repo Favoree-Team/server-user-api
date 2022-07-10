@@ -1,6 +1,4 @@
-package notification
-
-import "github.com/Favoree-Team/server-user-api/entity"
+package template
 
 var (
 	emailVerificationTemplate = `<!doctype html>
@@ -413,12 +411,4 @@ var (
 
 func SendVerificationTemplate(link string) string {
 	return emailVerificationTemplate
-}
-
-func RequestTransferTemplate(transaction entity.Transaction) string {
-	return ""
-}
-
-func SuccessTransferTemplate() string {
-	return ""
 }

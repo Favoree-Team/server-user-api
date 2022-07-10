@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/Favoree-Team/server-user-api/config"
+	"github.com/Favoree-Team/server-user-api/template"
 	"gopkg.in/gomail.v2"
 )
 
@@ -31,7 +32,7 @@ func (n *emailNotification) SendVerification(to string, link string) error {
 	m.SetHeader("From", "Favoree.id Team <noreply@favoree.id>")
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", "Email register verification")
-	m.SetBody("text/html", SendVerificationTemplate(link))
+	m.SetBody("text/html", template.SendVerificationTemplate(link))
 
 	err := n.Dialer.DialAndSend(m)
 
