@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/Favoree-Team/server-user-api/config"
+	"github.com/Favoree-Team/server-user-api/entity"
 	"github.com/dgrijalva/jwt-go"
 )
 
 type AuthService interface {
-	GenerateToken(UserId string, Role string, IsSubscribeBlog bool, active bool) (string, error)
+	GenerateToken(data entity.ClaimData) (string, error)
 	ValidateToken(encodedToken string) (*jwt.Token, error)
 }
 
@@ -18,12 +19,13 @@ type authService struct{}
 func NewAuthService() *authService {
 	return &authService{}
 }
-func (s *authService) GenerateToken(UserId string, Role string, IsSubscribeBlog bool, active bool) (string, error) {
+func (s *authService) GenerateToken(data entity.ClaimData) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id":           UserId,
-		"role":              Role,
-		"is_subscribe_blog": IsSubscribeBlog,
-		"active":            active,
+		"user_id":           data.UserId,
+		"email":             data.Email,
+		"role":              data.Role,
+		"is_subscribe_blog": data.IsSubscribeBlog,
+		"active":            data.Active,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

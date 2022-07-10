@@ -27,9 +27,10 @@ func Middleware(authService auth.AuthService) gin.HandlerFunc {
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 			c.Set("user_id", claims["user_id"])
+			c.Set("email", claims["email"])
 			c.Set("role", claims["role"])
-			c.Set("active", claims["active"])
 			c.Set("is_subscribe_blog", claims["is_subscribe_blog"])
+			c.Set("active", claims["active"])
 
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, utils.ErrorHandler(utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("error user unauthorized"))))

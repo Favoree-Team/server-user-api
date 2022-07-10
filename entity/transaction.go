@@ -1,7 +1,5 @@
 package entity
 
-import "github.com/go-playground/validator/v10"
-
 type TransactionStatusEnum interface {
 	IsValid() bool
 }
@@ -33,10 +31,6 @@ func (t TransactionStatus) IsValid() bool {
 		return true
 	}
 	return false
-}
-
-func ValidateTransStatusEnum(fl validator.FieldLevel) bool {
-	return fl.Field().Interface().(TransactionStatusEnum).IsValid()
 }
 
 type Transaction struct {
@@ -115,7 +109,7 @@ type TransactionItemPage struct {
 	AmountTransfer int               `json:"amount_transfer"`
 	AdminFee       int               `json:"admin_fee"`
 	AmountReceived int               `json:"amount_received"`
-	Status         TransactionStatus `json:"status"` // [pending, paid, success, failed, canceled]
+	Status         TransactionStatus `json:"status"` // [pending, success, failed, canceled]
 	Done           bool              `json:"done"`   // default is false
 	IsConfirmPaid  bool              `json:"is_confirm_paid"`
 	CreatedAt      string            `json:"created_at"`
@@ -133,7 +127,7 @@ type TransactionPage struct {
 
 // edit status by admin
 type TransactionStatusInput struct {
-	Status string `json:"status" binding:"required,status_enum"` // [pending, paid, success, failed, cancelled]
+	Status TransactionStatus `json:"status" binding:"required"` // [pending, success, failed, canceled]
 }
 
 // entity last transaction

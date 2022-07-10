@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/Favoree-Team/server-user-api/entity"
@@ -96,6 +97,12 @@ func (tc *transactionController) UpdateTransactionByAdmin(c *gin.Context) {
 		return
 	}
 
+	if ok := input.Status.IsValid(); !ok {
+		errMsg := utils.CreateErrorMsg(http.StatusBadRequest, errors.New("status input is invalid, choice : [pending, success, failed, canceled]"))
+		c.JSON(http.StatusBadRequest, utils.ErrorHandler(errMsg))
+		return
+	}
+
 	err := tc.transService.UpdateStatusById(transactionId, input)
 	if err != nil {
 		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
@@ -160,6 +167,15 @@ func (tc *transactionController) GetLastTransaction(c *gin.Context) {
 func (tc *transactionController) ConfirmPaid(c *gin.Context) {
 	userId, ok := c.Get("user_id")
 	if !ok {
+		log.Println("masuk ini error get user id")
+		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("unauthorized user"))
+		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
+		return
+	}
+
+	role, ok := c.Get("role")
+	if !ok {
+		log.Println("masuk ini error get role")
 		errMsg := utils.CreateErrorMsg(http.StatusUnauthorized, errors.New("unauthorized user"))
 		c.JSON(http.StatusUnauthorized, utils.ErrorHandler(errMsg))
 		return
@@ -172,7 +188,7 @@ func (tc *transactionController) ConfirmPaid(c *gin.Context) {
 		return
 	}
 
-	err := tc.transService.ConfirmPaid(userId.(string), transactionId)
+	err := tc.transService.ConfirmPaid(userId.(string), role.(string), transactionId)
 	if err != nil {
 		c.JSON(utils.GetErrorCode(err), utils.ErrorHandler(err))
 		return

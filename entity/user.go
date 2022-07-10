@@ -76,7 +76,10 @@ type UserLoginInput struct {
 }
 
 type UserResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Token string `json:"token"`
+	ID       string `json:"id"`
+	FullName string `json:"full_name"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+	Token    string `json:"token"`
 }

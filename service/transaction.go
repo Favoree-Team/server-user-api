@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,7 +23,7 @@ type TransactionService interface {
 	// GetTransactionDetail(id string) (entity.Transaction, error)
 	CreateTransaction(userId string, input entity.RequestTransaction) (entity.Transaction, error)
 	GetLastTransaction(userId string) (entity.LastTransactionResponse, error)
-	ConfirmPaid(userId string, id string) error
+	ConfirmPaid(userId string, role string, id string) error
 	CancelTransaction(userId string, id string) error
 }
 
@@ -82,7 +83,7 @@ func (s *transactionService) UpdateStatusById(id string, input entity.Transactio
 		"status":     input.Status,
 	}
 
-	if input.Status == string(entity.StatusPending) {
+	if input.Status == entity.StatusPending {
 		edit["done"] = false
 	} else {
 		edit["done"] = true
@@ -145,6 +146,8 @@ func (s *transactionService) CreateTransaction(userId string, input entity.Reque
 		return entity.Transaction{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
 
+	//TODO: send notification to email admin
+
 	return transaction, nil
 }
 
@@ -164,44 +167,43 @@ func (s *transactionService) GetLastTransaction(userId string) (entity.LastTrans
 	} else {
 		lastTransaction.Transaction = transactions[0]
 
+		log.Println(transactions[0].Done)
+		log.Println(transactions[0].IsConfirmPaid)
+		log.Println(transactions[0].Status)
+
 		// jika belum expired
 		// jika belum done => error
 		// jika belum done tapi sudah confirm paid => bisa create lagi
 
-		if transactions[0].IsConfirmPaid {
-			lastTransaction.InternalCode = entity.CreatableInternalCode
-			return lastTransaction, nil
+		timeExp, err := utils.ParseStrtoTime(transactions[0].ExpiredAt)
+		if err != nil {
+			return entity.LastTransactionResponse{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 		}
 
-		if !transactions[0].Done {
-			timeExp, err := utils.ParseStrtoTime(transactions[0].ExpiredAt)
-			if err != nil {
-				return entity.LastTransactionResponse{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
-			}
-
-			if timeExp.After(time.Now()) {
-				lastTransaction.InternalCode = entity.ErrorInternalCode
-				return lastTransaction, nil
-			}
-
+		if timeExp.After(time.Now()) {
 			lastTransaction.InternalCode = entity.CreatableInternalCode
-
-			return lastTransaction, nil
-		} else {
+		} else if !transactions[0].Done && !transactions[0].IsConfirmPaid && transactions[0].Status == entity.StatusPending {
+			lastTransaction.InternalCode = entity.ErrorInternalCode
+		} else if !transactions[0].Done && transactions[0].IsConfirmPaid {
 			lastTransaction.InternalCode = entity.CreatableInternalCode
-			return lastTransaction, nil
+		} else if transactions[0].Done {
+			lastTransaction.InternalCode = entity.CreatableInternalCode
 		}
 	}
+
+	return lastTransaction, nil
 }
 
-func (s *transactionService) ConfirmPaid(userId string, id string) error {
+func (s *transactionService) ConfirmPaid(userId string, role string, id string) error {
 	transaction, err := s.transRepo.GetByID(id)
 	if err != nil {
 		return utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
 
-	if transaction.UserID != userId {
-		return utils.CreateErrorMsg(http.StatusBadRequest, fmt.Errorf("user id %s not have permission to edit", userId))
+	if role != "admin" {
+		if transaction.UserID != userId {
+			return utils.CreateErrorMsg(http.StatusBadRequest, fmt.Errorf("user id %s not have permission to edit", userId))
+		}
 	}
 
 	var edit = map[string]interface{}{

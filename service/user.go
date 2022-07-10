@@ -59,17 +59,19 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 	// if found, return error information
 	if checkEmail.ID != "" && checkEmail.Email == input.Email {
 		return userResp, utils.CreateErrorMsg(http.StatusBadRequest, errors.New("email already exists"))
-	} else if checkEmail.Username == input.Username {
+	} else if input.Username != "" && checkEmail.Username == input.Username {
 		return userResp, utils.CreateErrorMsg(http.StatusBadRequest, errors.New("username already exists"))
 	}
 
-	checkUname, err := s.userRepository.GetUserByUsername(input.Username)
-	if err != nil {
-		return userResp, utils.CreateErrorMsg(http.StatusInternalServerError, err)
-	}
+	if input.Username != "" {
+		checkUname, err := s.userRepository.GetUserByUsername(input.Username)
+		if err != nil {
+			return userResp, utils.CreateErrorMsg(http.StatusInternalServerError, err)
+		}
 
-	if checkUname.ID != "" && checkUname.Username == input.Username {
-		return userResp, utils.CreateErrorMsg(http.StatusBadRequest, errors.New("username already exists"))
+		if checkUname.ID != "" && checkUname.Username == input.Username {
+			return userResp, utils.CreateErrorMsg(http.StatusBadRequest, errors.New("username already exists"))
+		}
 	}
 
 	// generate password to hash
@@ -97,7 +99,13 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 	}
 
 	// create token
-	token, err := s.authService.GenerateToken(user.ID, user.Role, user.IsSubscribeBlog, user.Status)
+	token, err := s.authService.GenerateToken(entity.ClaimData{
+		UserId:          user.ID,
+		Role:            user.Role,
+		IsSubscribeBlog: user.IsSubscribeBlog,
+		Active:          user.Status,
+		Email:           user.Email,
+	})
 	if err != nil {
 		return userResp, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
@@ -107,6 +115,9 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 	// return userResponse
 	userResp.ID = user.ID
 	userResp.Email = user.Email
+	userResp.FullName = user.FullName
+	userResp.Role = user.Role
+	userResp.Username = user.Username
 	userResp.Token = token
 
 	return userResp, nil
@@ -137,7 +148,13 @@ func (s *userService) LoginUser(input entity.UserLoginInput) (entity.UserRespons
 	}
 
 	// if found, create token
-	token, err := s.authService.GenerateToken(user.ID, user.Role, user.IsSubscribeBlog, user.Status)
+	token, err := s.authService.GenerateToken(entity.ClaimData{
+		UserId:          user.ID,
+		Role:            user.Role,
+		IsSubscribeBlog: user.IsSubscribeBlog,
+		Active:          user.Status,
+		Email:           user.Email,
+	})
 	if err != nil {
 		return userResp, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 	}
@@ -145,6 +162,9 @@ func (s *userService) LoginUser(input entity.UserLoginInput) (entity.UserRespons
 	// send data
 	userResp.ID = user.ID
 	userResp.Email = user.Email
+	userResp.FullName = user.FullName
+	userResp.Role = user.Role
+	userResp.Username = user.Username
 	userResp.Token = token
 
 	return userResp, nil
