@@ -34,7 +34,7 @@ func TransactionRoute(r *gin.Engine) {
 
 			// ================  USER  =====================
 			// create new transaction
-			trx.POST("/", mainMiddleware, transController.CreateTransaction)
+			trx.POST("/create", mainMiddleware, transController.CreateTransaction)
 
 			// get transaction detail (MASIH BELUM PERLU)
 			// bisa diget dari last transaction

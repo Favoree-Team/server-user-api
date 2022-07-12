@@ -87,6 +87,7 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 		Username:        input.Username,
 		PhoneNumber:     input.PhoneNumber,
 		Password:        string(hashPass),
+		FullName:        input.FullName,
 		Role:            "user",
 		Status:          true,
 		IsSubscribeBlog: false,
@@ -118,6 +119,7 @@ func (s *userService) RegisterUser(input entity.UserRegisterInput) (entity.UserR
 	userResp.FullName = user.FullName
 	userResp.Role = user.Role
 	userResp.Username = user.Username
+	userResp.IsSubscribe = user.IsSubscribeBlog
 	userResp.Token = token
 
 	return userResp, nil
@@ -165,6 +167,7 @@ func (s *userService) LoginUser(input entity.UserLoginInput) (entity.UserRespons
 	userResp.FullName = user.FullName
 	userResp.Role = user.Role
 	userResp.Username = user.Username
+	userResp.IsSubscribe = user.IsSubscribeBlog
 	userResp.Token = token
 
 	return userResp, nil

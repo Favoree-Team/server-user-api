@@ -89,6 +89,10 @@ func (s *transactionService) UpdateStatusById(id string, input entity.Transactio
 		edit["done"] = true
 	}
 
+	if input.Note != "" || len(input.Note) > 0 {
+		edit["note"] = entity.GetNoteBody(input.Status) + input.Note
+	}
+
 	err := s.transRepo.UpdateByID(id, edit)
 	if err != nil {
 		return utils.CreateErrorMsg(http.StatusInternalServerError, err)
@@ -123,9 +127,20 @@ func (s *transactionService) CreateTransaction(userId string, input entity.Reque
 
 	expired := time.Minute * time.Duration(expiredTime)
 
+	newestTransaction, err := s.transRepo.GetLastTransactionToday()
+	if err != nil {
+		return entity.Transaction{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
+	}
+
+	orderID, err := utils.GetOrderNow(newestTransaction)
+	if err != nil {
+		return entity.Transaction{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
+	}
+
 	var transaction = entity.Transaction{
 		ID:             generateId,
 		UserID:         userId,
+		OrderID:        orderID,
 		SenderNumber:   input.SenderNumber,
 		SenderWallet:   input.SenderWallet,
 		ReceiverName:   input.ReceiverName,
@@ -167,10 +182,6 @@ func (s *transactionService) GetLastTransaction(userId string) (entity.LastTrans
 	} else {
 		lastTransaction.Transaction = transactions[0]
 
-		log.Println(transactions[0].Done)
-		log.Println(transactions[0].IsConfirmPaid)
-		log.Println(transactions[0].Status)
-
 		// jika belum expired
 		// jika belum done => error
 		// jika belum done tapi sudah confirm paid => bisa create lagi
@@ -180,13 +191,17 @@ func (s *transactionService) GetLastTransaction(userId string) (entity.LastTrans
 			return entity.LastTransactionResponse{}, utils.CreateErrorMsg(http.StatusInternalServerError, err)
 		}
 
-		if timeExp.After(time.Now()) {
+		if timeExp.Before(time.Now()) {
+			log.Println("masuk case sudah epired")
 			lastTransaction.InternalCode = entity.CreatableInternalCode
 		} else if !transactions[0].Done && !transactions[0].IsConfirmPaid && transactions[0].Status == entity.StatusPending {
+			log.Println("masuk case belum paid, belum done, dan masih pending")
 			lastTransaction.InternalCode = entity.ErrorInternalCode
 		} else if !transactions[0].Done && transactions[0].IsConfirmPaid {
+			log.Println("masuk case belum paid, dan sudah confirm paid")
 			lastTransaction.InternalCode = entity.CreatableInternalCode
 		} else if transactions[0].Done {
+			log.Println("masuk case done")
 			lastTransaction.InternalCode = entity.CreatableInternalCode
 		}
 	}

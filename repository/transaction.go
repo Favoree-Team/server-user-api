@@ -9,6 +9,9 @@ type TransactionRepository interface {
 	GetAll(offset int, limit int) (entity.ListTransaction, int64, error)
 	GetByID(id string) (entity.Transaction, error)
 	GetByUserID(userId string) (entity.ListTransaction, error)
+
+	GetLastTransactionToday() (entity.Transaction, error)
+
 	Insert(transaction entity.Transaction) error
 	UpdateByID(id string, updates map[string]interface{}) error
 }
@@ -19,6 +22,20 @@ type transactionRepository struct {
 
 func NewTransactionRepository(db *gorm.DB) *transactionRepository {
 	return &transactionRepository{db: db}
+}
+
+func (r *transactionRepository) GetLastTransactionToday() (entity.Transaction, error) {
+	var transaction entity.Transaction
+
+	if err := r.db.Where("DATE(created_at) = CURDATE()").Order("created_at DESC").First(&transaction).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return entity.Transaction{}, nil
+		} else {
+			return entity.Transaction{}, err
+		}
+	}
+
+	return transaction, nil
 }
 
 func (r *transactionRepository) GetAll(offset int, limit int) (entity.ListTransaction, int64, error) {

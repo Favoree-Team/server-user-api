@@ -25,6 +25,15 @@ const (
 	StatusCanceled TransactionStatus = "canceled"
 )
 
+var (
+	noteBody = map[TransactionStatus]string{
+		"pending":  "PENDING : ",
+		"success":  "SUCCESS : ",
+		"failed":   "FAILED : ",
+		"canceled": "CANCELED : ",
+	}
+)
+
 func (t TransactionStatus) IsValid() bool {
 	switch t {
 	case StatusPending, StatusSuccess, StatusFailed, StatusCanceled:
@@ -33,9 +42,18 @@ func (t TransactionStatus) IsValid() bool {
 	return false
 }
 
+func GetNoteBody(status TransactionStatus) string {
+	if _, ok := noteBody[status]; ok {
+		return noteBody[status]
+	}
+
+	return ""
+}
+
 type Transaction struct {
 	ID             string            `json:"id"`
 	UserID         string            `json:"user_id"`
+	OrderID        string            `json:"order_id"`
 	SenderNumber   string            `json:"sender_number"`
 	SenderWallet   string            `json:"sender_wallet"`
 	ReceiverName   string            `json:"receiver_name"`
@@ -46,6 +64,7 @@ type Transaction struct {
 	AmountReceived int               `json:"amount_received"`
 	Status         TransactionStatus `json:"status"` // [pending, paid, success, failed, canceled]
 	Done           bool              `json:"done"`   // default is false
+	Note           string            `json:"note"`
 	IsConfirmPaid  bool              `json:"is_confirm_paid"`
 	CreatedAt      string            `json:"created_at"`
 	UpdatedAt      string            `json:"updated_at"`
@@ -66,6 +85,7 @@ func (t ListTransaction) ToListTransactionItemPage(start int) []TransactionItemP
 			ExternalID:     start + (i + 1),
 			ID:             t[i].ID,
 			UserID:         t[i].UserID,
+			OrderID:        t[i].OrderID,
 			SenderNumber:   t[i].SenderNumber,
 			SenderWallet:   t[i].SenderWallet,
 			ReceiverName:   t[i].ReceiverName,
@@ -76,6 +96,7 @@ func (t ListTransaction) ToListTransactionItemPage(start int) []TransactionItemP
 			AmountReceived: t[i].AmountReceived,
 			Status:         t[i].Status,
 			Done:           t[i].Done,
+			Note:           t[i].Note,
 			IsConfirmPaid:  t[i].IsConfirmPaid,
 			CreatedAt:      t[i].CreatedAt,
 			UpdatedAt:      t[i].UpdatedAt,
@@ -101,6 +122,7 @@ type TransactionItemPage struct {
 	ExternalID     int               `json:"external_id"`
 	ID             string            `json:"id"`
 	UserID         string            `json:"user_id"`
+	OrderID        string            `json:"order_id"`
 	SenderNumber   string            `json:"sender_number"`
 	SenderWallet   string            `json:"sender_wallet"`
 	ReceiverName   string            `json:"receiver_name"`
@@ -110,7 +132,8 @@ type TransactionItemPage struct {
 	AdminFee       int               `json:"admin_fee"`
 	AmountReceived int               `json:"amount_received"`
 	Status         TransactionStatus `json:"status"` // [pending, success, failed, canceled]
-	Done           bool              `json:"done"`   // default is false
+	Note           string            `json:"note"`
+	Done           bool              `json:"done"` // default is false
 	IsConfirmPaid  bool              `json:"is_confirm_paid"`
 	CreatedAt      string            `json:"created_at"`
 	UpdatedAt      string            `json:"updated_at"`
@@ -128,6 +151,7 @@ type TransactionPage struct {
 // edit status by admin
 type TransactionStatusInput struct {
 	Status TransactionStatus `json:"status" binding:"required"` // [pending, success, failed, canceled]
+	Note   string            `json:"note"`
 }
 
 // entity last transaction

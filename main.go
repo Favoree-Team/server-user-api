@@ -16,5 +16,4 @@ func main() {
 	routes.TransactionRoute(r)
 
 	r.Run()
-
 }

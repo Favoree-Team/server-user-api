@@ -65,7 +65,8 @@ type UserProfileEdit struct {
 type UserRegisterInput struct {
 	Email       string `json:"email" binding:"required"`
 	Password    string `json:"password" binding:"required"`
-	Username    string `json:"username"`
+	FullName    string `json:"full_name"`
+	Username    string `json:"username" binding:"required"`
 	PhoneNumber string `json:"phone_number"`
 }
 
@@ -76,10 +77,11 @@ type UserLoginInput struct {
 }
 
 type UserResponse struct {
-	ID       string `json:"id"`
-	FullName string `json:"full_name"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Role     string `json:"role"`
-	Token    string `json:"token"`
+	ID          string `json:"id"`
+	FullName    string `json:"full_name"`
+	Username    string `json:"username"`
+	Email       string `json:"email"`
+	Role        string `json:"role"`
+	IsSubscribe bool   `json:"is_subscribe"`
+	Token       string `json:"token"`
 }
